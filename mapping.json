@@ -1,0 +1,11 @@
+{
+    "PRODUCT_NAME": "product_name",
+    "CUSTOMER_NAME": "customer_name",
+    "ORDER_ID": "order_id",
+    "PROFIT": "profit",
+    "UNIT_PRICE": "unit_price",
+    "SHIPPING_COST": "shipping_cost",
+    "REGION": "region",
+    "PRODUCT_SUB_CATEGORY": "product_sub_category",
+    "PRODUCT_BASE_MARGIN": "product_base_margin"
+}
