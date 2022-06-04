@@ -1,3 +1,4 @@
+import sys
 import csv
 import json
 import pyodbc
@@ -13,6 +14,7 @@ Driver = config['CONNECTION']['Driver']         # driver to connect to SQL
 Server = config['CONNECTION']['Server']         # server to connect to SQL
 database = config['CONNECTION']['Database']     # database name in SQL
 table = config['CONNECTION']['table_name']      # table name in database
+fname = config['CONNECTION']['file_name']
 
 def conn_sql_server() -> pyodbc.Cursor:
     """This function helps to connect the script to the SQL server"""
@@ -33,18 +35,30 @@ def calculate_time(func):
         print("Total time taken by {} function is %.2f seconds".format(func.__name__)%(end-begin))
     return inner1
 
+def open_file():
+    '''This function will open the file and return a file pointer'''
+    try:
+        f = open(fname)
+        return f
+    except OSError:
+        print("Could not open/read file:" + fname)
+        sys.exit()
 
-def create_query() -> str:
+def load_data(f) -> dict:
+    '''This function will load the data of file into a variable'''
+    try:
+        items = json.load(f)
+        return items
+    except ValueError: 
+        print('Decoding JSON has failed')
+        return None
+
+def create_query(items: dict) -> str:
     '''This function creates a query for insertion of data'''
     try:
-        f = open('mapping.json')
-        items = json.load(f)
-        coloumns = ''
         count = len(items)
-        for coloumn in items:
-            coloumns += f'{coloumn}, '
-        coloumns = coloumns[:-2]
-        placeholders = '?,' * (count-1) + '?'
+        coloumns =  ", ".join(items)
+        placeholders = ','.join(['?' for x in range(count)])
         query = f"INSERT INTO {table} ({coloumns}) VALUES ({placeholders}) "
         return query
     except Exception as e:
@@ -61,14 +75,18 @@ def insert_data(query: str, cursor: pyodbc.Cursor):
             for row in rows:
                 cursor.execute(query, row)
                 cursor.commit()
-    except Exception as e:
-        print("Data not inserted to table due to : ", e)
+    except pyodbc.IntegrityError as err:
+        print("Data not inserted to table due to : ", err)
 
 
 def main():
     """This is the main function of the script"""
     cursor = conn_sql_server()
-    insert_qry = create_query()
+    fp = open_file()
+    content = load_data(fp)
+    if content == None:
+        exit()
+    insert_qry = create_query(content)
     insert_data(insert_qry, cursor)
 
 
