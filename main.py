@@ -14,7 +14,8 @@ Driver = config['CONNECTION']['Driver']         # driver to connect to SQL
 Server = config['CONNECTION']['Server']         # server to connect to SQL
 database = config['CONNECTION']['Database']     # database name in SQL
 table = config['CONNECTION']['table_name']      # table name in database
-fname = config['CONNECTION']['file_name']
+fname = config['CONNECTION']['file_name']       # mapping file name
+
 
 def conn_sql_server() -> pyodbc.Cursor:
     """This function helps to connect the script to the SQL server"""
@@ -26,14 +27,17 @@ def conn_sql_server() -> pyodbc.Cursor:
     except pyodbc.Error as err:
         logging.warning(err)
 
+
 def calculate_time(func):
     """This is a decorator function which calculates the execution time of any user defined function"""
     def inner1(*args, **kwargs):
         begin = perf_counter()
         func(*args, **kwargs)
         end = perf_counter()
-        print("Total time taken by {} function is %.2f seconds".format(func.__name__)%(end-begin))
+        print("Total time taken by {} function is %.2f seconds".format(
+            func.__name__) % (end-begin))
     return inner1
+
 
 def open_file():
     '''This function will open the file and return a file pointer'''
@@ -44,25 +48,27 @@ def open_file():
         print("Could not open/read file:" + fname)
         sys.exit()
 
+
 def load_data(f) -> dict:
     '''This function will load the data of file into a variable'''
     try:
         items = json.load(f)
         return items
-    except ValueError: 
+    except ValueError:
         print('Decoding JSON has failed')
         return None
+
 
 def create_query(items: dict) -> str:
     '''This function creates a query for insertion of data'''
     try:
         count = len(items)
-        coloumns =  ", ".join(items)
+        coloumns = ", ".join(items)
         placeholders = ','.join(['?' for x in range(count)])
         query = f"INSERT INTO {table} ({coloumns}) VALUES ({placeholders}) "
         return query
     except Exception as e:
-        print("Not able to create query due to : ",e)
+        print("Not able to create query due to : ", e)
 
 
 @calculate_time
@@ -75,6 +81,7 @@ def insert_data(query: str, cursor: pyodbc.Cursor):
             for row in rows:
                 cursor.execute(query, row)
                 cursor.commit()
+                break
     except pyodbc.IntegrityError as err:
         print("Data not inserted to table due to : ", err)
 
